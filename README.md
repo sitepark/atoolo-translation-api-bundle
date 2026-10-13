@@ -7,6 +7,9 @@ case is [i18next](https://www.i18next.com/) with
 labels are maintained in Symfony translation files (e.g. Infosite language
 packages in SiteKit) instead of being hard-coded in the frontend.
 
+This bundle only **delivers** existing translations. It does not create
+them — for machine translation of translation files see `translate-api`.
+
 > **Status:** prototype
 
 ## Endpoint

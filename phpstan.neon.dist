@@ -1,0 +1,7 @@
+parameters:
+    level: 9
+    phpVersion: 80400
+    tmpDir: var/cache/phpstan
+    paths:
+        - src
+        - dev/src

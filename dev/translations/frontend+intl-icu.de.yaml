@@ -1,0 +1,7 @@
+greeting: 'Hallo aus Symfony!'
+welcome: 'Willkommen, {name}!'
+cart:
+  items: '{count, plural, =0 {Ihr Warenkorb ist leer.} one {Sie haben # Artikel im Warenkorb.} other {Sie haben # Artikel im Warenkorb.}}'
+  checkout: 'Zur Kasse'
+footer:
+  copyright: '© {year} Sitepark'

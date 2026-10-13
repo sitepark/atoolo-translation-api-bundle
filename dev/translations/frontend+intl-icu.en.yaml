@@ -1,0 +1,8 @@
+greeting: 'Hello from Symfony!'
+welcome: 'Welcome, {name}!'
+cart:
+  items: '{count, plural, =0 {Your cart is empty.} one {You have # item in your cart.} other {You have # items in your cart.}}'
+  checkout: 'Checkout'
+footer:
+  copyright: '© {year} Sitepark'
+only_in_english: 'This text only exists in English (fallback).'

@@ -1,0 +1,22 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  Atoolo\TranslationApi\Service\CatalogueExporter:
+    arguments:
+      $translator: '@translator'
+
+  Atoolo\TranslationApi\Service\LocaleResolver:
+    arguments:
+      $locales: '%atoolo_translation_api.locales%'
+
+  Atoolo\TranslationApi\Service\KeyNester: ~
+
+  Atoolo\TranslationApi\Controller\TranslationController:
+    arguments:
+      $domains: '%atoolo_translation_api.domains%'
+      $cacheMaxAge: '%atoolo_translation_api.cache_max_age%'
+      $corsAllowOrigins: '%atoolo_translation_api.cors_allow_origins%'
+    tags:
+      - { name: controller.service_arguments }

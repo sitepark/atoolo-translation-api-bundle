@@ -30,7 +30,7 @@ GET /api/translations/{locale}/domains/{domain}[.json]
 }
 ```
 
-* **Full access** — users with the `full_access_role` may fetch every
+* **Full access** — users with one of the `full_access_roles` may fetch every
   domain and every well-formed locale, see [Full access](#full-access).
 * **Suffix** — the `.json` suffix is optional, so a `loadPath` ending in
   `{{ns}}.json` (as the i18next default) works as well.
@@ -95,7 +95,7 @@ atoolo_translation_api:
 atoolo_translation_api:
   domains: [frontend]          # exposed domains, empty = nothing, '*' = every domain
   locales: [de, en]            # allowed locales, default: framework.enabled_locales
-  full_access_role: ~          # e.g. ROLE_TRANSLATOR, see "Full access"
+  full_access_roles: []        # e.g. [ROLE_API, ROLE_ADMIN], see "Full access"
   cache_max_age: 300           # seconds
 ```
 
@@ -115,13 +115,13 @@ only contain texts shown to visitors anyway.
 
 ## Full access
 
-Users granted the `full_access_role` may fetch every domain and every
+Users granted one of the `full_access_roles` may fetch every domain and every
 well-formed locale and list all domains of a locale, regardless of
 `domains` and `locales` (e.g. for translation tools that need all
 catalogues):
 
-* The role is checked with `isGranted()`, so a voter attribute works as well.
-  It is only checked if the request is not allowed anyway.
+* The roles are checked with `isGranted()`, so voter attributes work as
+  well. They are only checked if the request is not allowed anyway.
 * Locales that are not allowed are delivered in their ICU spelling (`pt-BR` →
   `pt_BR`), allowed locales keep their configured spelling.
 * These responses are `Cache-Control: private` and thus not stored by shared
@@ -130,7 +130,7 @@ catalogues):
 The bundle does not authenticate users. This is up to the firewall of the
 application (`symfony/security-bundle`), which must cover the path
 `/api/translations`. Without the security bundle or without
-`full_access_role` nobody has full access. Example with HTTP Basic:
+`full_access_roles` nobody has full access. Example with HTTP Basic:
 
 ```yaml
 # config/packages/security.yaml
@@ -151,8 +151,15 @@ Applications using `atoolo/security-bundle` need no additional firewall: the
 * Clients fetch a token via `POST /api/login_check` and send it as
   `Authorization: Bearer <token>`. Requests without token stay anonymous,
   an invalid or expired token responds with `401`.
-* Roles of IES and SiteKit users are mapped to `ROLE_<NAME>` in upper case,
-  so the role `translator` is configured as `full_access_role: ROLE_TRANSLATOR`.
+* Roles of IES and SiteKit users are mapped to `ROLE_<NAME>` in upper case
+  (`api` → `ROLE_API`).
+* The IES already uses the user `api` with `ROLE_API`, which also grants
+  access to `/api/admin/`. Reusing it needs no additional user:
+
+  ```yaml
+  atoolo_translation_api:
+    full_access_roles: [ROLE_API, ROLE_ADMIN]
+  ```
 * Cross-origin requests with token need `Authorization` in the allowed
   headers of the CORS configuration, see [CORS](#cors).
 

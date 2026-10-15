@@ -31,7 +31,7 @@ class ConfigurationTest extends TestCase
             [
                 'domains' => [],
                 'locales' => [],
-                'full_access_role' => null,
+                'full_access_roles' => [],
                 'cache_max_age' => 300,
             ],
             $this->process([]),
@@ -43,13 +43,13 @@ class ConfigurationTest extends TestCase
         $config = $this->process([
             'domains' => ['frontend'],
             'locales' => ['de', 'en_GB'],
-            'full_access_role' => 'ROLE_TRANSLATOR',
+            'full_access_roles' => ['ROLE_API', 'ROLE_ADMIN'],
             'cache_max_age' => 0,
         ]);
 
         $this->assertSame(['frontend'], $config['domains']);
         $this->assertSame(['de', 'en_GB'], $config['locales']);
-        $this->assertSame('ROLE_TRANSLATOR', $config['full_access_role']);
+        $this->assertSame(['ROLE_API', 'ROLE_ADMIN'], $config['full_access_roles']);
         $this->assertSame(0, $config['cache_max_age']);
     }
 
@@ -59,10 +59,10 @@ class ConfigurationTest extends TestCase
         $this->process(['cache_max_age' => -1]);
     }
 
-    public function testRejectsEmptyFullAccessRole(): void
+    public function testRejectsEmptyFullAccessRoles(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->process(['full_access_role' => '']);
+        $this->process(['full_access_roles' => ['']]);
     }
 
     public function testAcceptsWildcardDomain(): void

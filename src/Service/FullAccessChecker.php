@@ -15,19 +15,24 @@ class FullAccessChecker
     /**
      * @param AuthorizationCheckerInterface|null $authorizationChecker `null`
      *     if the security bundle is not installed
-     * @param string|null $role role (or voter attribute) granting full access,
-     *     `null` disables full access
+     * @param list<string> $roles roles (or voter attributes) granting full
+     *     access, one of them is sufficient, empty disables full access
      */
     public function __construct(
         private readonly ?AuthorizationCheckerInterface $authorizationChecker,
-        private readonly ?string $role,
+        private readonly array $roles,
     ) {}
 
     public function hasFullAccess(): bool
     {
-        if ($this->authorizationChecker === null || $this->role === null) {
+        if ($this->authorizationChecker === null) {
             return false;
         }
-        return $this->authorizationChecker->isGranted($this->role);
+        foreach ($this->roles as $role) {
+            if ($this->authorizationChecker->isGranted($role)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

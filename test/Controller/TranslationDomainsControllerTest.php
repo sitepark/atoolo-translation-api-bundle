@@ -40,7 +40,7 @@ class TranslationDomainsControllerTest extends TestCase
         return new TranslationDomainsController(
             new DomainLister($translator),
             new LocaleResolver(['de']),
-            new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
+            new FullAccessChecker($authorizationChecker, ['ROLE_TRANSLATOR']),
             new JsonResponseFactory(600),
             new ExposedDomains($domains),
         );

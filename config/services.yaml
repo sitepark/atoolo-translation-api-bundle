@@ -16,7 +16,7 @@ services:
   Atoolo\TranslationApi\Service\FullAccessChecker:
     arguments:
       $authorizationChecker: '@?security.authorization_checker'
-      $role: '%atoolo_translation_api.full_access_role%'
+      $roles: '%atoolo_translation_api.full_access_roles%'
 
   Atoolo\TranslationApi\Service\JsonResponseFactory:
     arguments:

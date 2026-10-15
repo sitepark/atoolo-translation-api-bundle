@@ -12,42 +12,40 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 #[CoversClass(FullAccessChecker::class)]
 class FullAccessCheckerTest extends TestCase
 {
-    public function testGrantedRole(): void
+    public function testOneGrantedRoleIsSufficient(): void
     {
-        $authorizationChecker = $this->createMock(AuthorizationCheckerInterface::class);
-        $authorizationChecker->expects($this->once())
-            ->method('isGranted')
-            ->with('ROLE_TRANSLATOR')
-            ->willReturn(true);
+        $authorizationChecker = $this->createStub(AuthorizationCheckerInterface::class);
+        $authorizationChecker->method('isGranted')
+            ->willReturnCallback(static fn(string $role): bool => $role === 'ROLE_ADMIN');
 
-        $checker = new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR');
+        $checker = new FullAccessChecker($authorizationChecker, ['ROLE_API', 'ROLE_ADMIN']);
 
         $this->assertTrue($checker->hasFullAccess());
     }
 
-    public function testDeniedRole(): void
+    public function testDeniedRoles(): void
     {
         $authorizationChecker = $this->createStub(AuthorizationCheckerInterface::class);
         $authorizationChecker->method('isGranted')->willReturn(false);
 
-        $checker = new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR');
+        $checker = new FullAccessChecker($authorizationChecker, ['ROLE_API', 'ROLE_ADMIN']);
 
         $this->assertFalse($checker->hasFullAccess());
     }
 
-    public function testWithoutRole(): void
+    public function testWithoutRoles(): void
     {
         $authorizationChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $authorizationChecker->expects($this->never())->method('isGranted');
 
-        $checker = new FullAccessChecker($authorizationChecker, null);
+        $checker = new FullAccessChecker($authorizationChecker, []);
 
         $this->assertFalse($checker->hasFullAccess());
     }
 
     public function testWithoutSecurity(): void
     {
-        $checker = new FullAccessChecker(null, 'ROLE_TRANSLATOR');
+        $checker = new FullAccessChecker(null, ['ROLE_API']);
 
         $this->assertFalse($checker->hasFullAccess());
     }

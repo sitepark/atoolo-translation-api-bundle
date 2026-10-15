@@ -51,7 +51,7 @@ class TranslationControllerTest extends TestCase
             new CatalogueExporter($translator),
             new LocaleResolver(['de', 'en']),
             new KeyNester(),
-            new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
+            new FullAccessChecker($authorizationChecker, ['ROLE_TRANSLATOR']),
             new JsonResponseFactory(600),
             new ExposedDomains($domains),
         );

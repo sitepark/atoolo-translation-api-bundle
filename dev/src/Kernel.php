@@ -87,7 +87,7 @@ final class Kernel extends BaseKernel
         $container->extension('atoolo_translation_api', [
             'domains' => ['frontend'],
             'locales' => ['de', 'en', 'en_GB'],
-            'full_access_role' => 'ROLE_TRANSLATOR',
+            'full_access_roles' => ['ROLE_TRANSLATOR'],
         ]);
         // CORS is up to the application, as in the atoolo applications
         $container->extension('nelmio_cors', [

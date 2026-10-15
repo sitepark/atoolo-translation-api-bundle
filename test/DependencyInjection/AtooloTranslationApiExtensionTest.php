@@ -49,12 +49,12 @@ class AtooloTranslationApiExtensionTest extends TestCase
     {
         $container = $this->load([
             'domains' => ['frontend'],
-            'full_access_role' => 'ROLE_TRANSLATOR',
+            'full_access_roles' => ['ROLE_API'],
             'cache_max_age' => 60,
         ]);
 
         $this->assertSame(['frontend'], $container->getParameter('atoolo_translation_api.domains'));
-        $this->assertSame('ROLE_TRANSLATOR', $container->getParameter('atoolo_translation_api.full_access_role'));
+        $this->assertSame(['ROLE_API'], $container->getParameter('atoolo_translation_api.full_access_roles'));
         $this->assertSame(60, $container->getParameter('atoolo_translation_api.cache_max_age'));
     }
 }

@@ -15,7 +15,7 @@ them — for machine translation of translation files see `translate-api`.
 ## Endpoint
 
 ```
-GET /api/translations/{locale}/{domain}[.json]
+GET /api/translations/{locale}/domains/{domain}[.json]
 ```
 
 ```json
@@ -30,8 +30,8 @@ GET /api/translations/{locale}/{domain}[.json]
 
 * **Full access** — users with the `full_access_role` may fetch every
   domain and every well-formed locale, see [Full access](#full-access).
-* **Suffix** — the `.json` suffix is optional, so the i18next default
-  `loadPath` (`…/{{lng}}/{{ns}}.json`) works as well.
+* **Suffix** — the `.json` suffix is optional, so a `loadPath` ending in
+  `{{ns}}.json` (as the i18next default) works as well.
 * **Domain** — only domains listed in `domains` are delivered, everything
   else responds with `404`. A domain corresponds to an i18next namespace.
 * **Locale** — Symfony compares locales as exact strings, while i18next
@@ -172,7 +172,7 @@ i18n.use(ICU).use(HttpBackend).init({
   ns: ['frontend'],
   defaultNS: 'frontend',
   backend: {
-    loadPath: 'https://www.example.com/api/translations/{{lng}}/{{ns}}',
+    loadPath: 'https://www.example.com/api/translations/{{lng}}/domains/{{ns}}',
   },
 })
 
@@ -200,12 +200,12 @@ composer analyse
 
 ```sh
 composer serve-dev
-curl -i http://localhost:8000/api/translations/de/frontend
+curl -i http://localhost:8000/api/translations/de/domains/frontend
 # full access: user "translator", password "translator"
-curl -i -u translator:translator http://localhost:8000/api/translations/en/internal
+curl -i -u translator:translator http://localhost:8000/api/translations/en/domains/internal
 ```
 
 It allows every CORS origin (via `nelmio/cors-bundle`), so e.g. the i18next
-demo can use `http://localhost:8000/api/translations/{{lng}}/{{ns}}` as API
+demo can use `http://localhost:8000/api/translations/{{lng}}/domains/{{ns}}` as API
 URL.
 The functional tests run against the same application.

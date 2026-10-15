@@ -22,7 +22,7 @@ class TranslationApiTest extends WebTestCase
     public function testDeliversTranslationsWithFallback(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/en-GB/frontend', server: [
+        $client->request('GET', '/api/translations/en-GB/domains/frontend', server: [
             'HTTP_ORIGIN' => 'https://example.com',
         ]);
 
@@ -44,7 +44,7 @@ class TranslationApiTest extends WebTestCase
     public function testAcceptsJsonSuffix(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/de/frontend.json');
+        $client->request('GET', '/api/translations/de/domains/frontend.json');
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
@@ -53,7 +53,7 @@ class TranslationApiTest extends WebTestCase
     public function testRejectsOtherSuffix(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/de/frontend.xml');
+        $client->request('GET', '/api/translations/de/domains/frontend.xml');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -61,7 +61,7 @@ class TranslationApiTest extends WebTestCase
     public function testDomainNotExposed(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/en/internal');
+        $client->request('GET', '/api/translations/en/domains/internal');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -69,7 +69,7 @@ class TranslationApiTest extends WebTestCase
     public function testLocaleNotAllowed(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/fr/frontend');
+        $client->request('GET', '/api/translations/fr/domains/frontend');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -77,7 +77,7 @@ class TranslationApiTest extends WebTestCase
     public function testFullAccessToDomainNotExposed(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/en/internal', server: [
+        $client->request('GET', '/api/translations/en/domains/internal', server: [
             'PHP_AUTH_USER' => 'translator',
             'PHP_AUTH_PW' => 'translator',
         ]);
@@ -95,7 +95,7 @@ class TranslationApiTest extends WebTestCase
     public function testFullAccessToLocaleNotAllowed(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/fr/frontend', server: [
+        $client->request('GET', '/api/translations/fr/domains/frontend', server: [
             'PHP_AUTH_USER' => 'translator',
             'PHP_AUTH_PW' => 'translator',
         ]);
@@ -111,7 +111,7 @@ class TranslationApiTest extends WebTestCase
     public function testCorsPreflight(): void
     {
         $client = static::createClient();
-        $client->request('OPTIONS', '/api/translations/en/internal', server: [
+        $client->request('OPTIONS', '/api/translations/en/domains/internal', server: [
             'HTTP_ORIGIN' => 'https://example.com',
             'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
             'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'Authorization',
@@ -125,7 +125,7 @@ class TranslationApiTest extends WebTestCase
     public function testWrongCredentials(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/en/internal', server: [
+        $client->request('GET', '/api/translations/en/domains/internal', server: [
             'PHP_AUTH_USER' => 'translator',
             'PHP_AUTH_PW' => 'wrong',
         ]);
@@ -136,7 +136,7 @@ class TranslationApiTest extends WebTestCase
     public function testOnlyGetIsAllowed(): void
     {
         $client = static::createClient();
-        $client->request('POST', '/api/translations/en/frontend');
+        $client->request('POST', '/api/translations/en/domains/frontend');
 
         $this->assertResponseStatusCodeSame(405);
     }

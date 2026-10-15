@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Delivers the messages of a translation domain as JSON object, as expected
- * by the i18next http backend (`loadPath: '/api/translations/{{lng}}/{{ns}}'`,
+ * by the i18next http backend (`loadPath: '/api/translations/{{lng}}/domains/{{ns}}'`,
  * the `.json` suffix of the i18next default load path is optional).
  * The messages are delivered unchanged, i.e. in ICU message format if the
  * domain uses it.
@@ -48,7 +48,7 @@ final class TranslationController
      *     has no full access
      */
     #[Route(
-        path: '/api/translations/{locale}/{domain}.{_format}',
+        path: '/api/translations/{locale}/domains/{domain}.{_format}',
         name: 'atoolo_translation_api',
         requirements: ['domain' => '[^/.]+', '_format' => 'json'],
         defaults: ['_format' => 'json'],

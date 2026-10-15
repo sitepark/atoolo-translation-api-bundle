@@ -6,6 +6,7 @@ namespace Atoolo\TranslationApi\Controller;
 
 use Atoolo\TranslationApi\Service\CatalogueExporter;
 use Atoolo\TranslationApi\Service\DomainName;
+use Atoolo\TranslationApi\Service\ExposedDomains;
 use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
@@ -29,16 +30,13 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class TranslationController
 {
-    /**
-     * @param list<string> $domains
-     */
     public function __construct(
         private readonly CatalogueExporter $exporter,
         private readonly LocaleResolver $localeResolver,
         private readonly KeyNester $keyNester,
         private readonly FullAccessChecker $fullAccessChecker,
         private readonly JsonResponseFactory $responseFactory,
-        private readonly array $domains,
+        private readonly ExposedDomains $exposedDomains,
     ) {}
 
     /**
@@ -57,11 +55,7 @@ final class TranslationController
     {
         $domain = DomainName::base($domain);
         $resolvedLocale = $this->localeResolver->resolve($locale);
-        $exposedDomain = in_array(
-            $domain,
-            array_map(DomainName::base(...), $this->domains),
-            true,
-        );
+        $exposedDomain = $this->exposedDomains->isExposed($domain);
         // full access is only checked if needed, so that the responses of
         // public requests stay publicly cacheable
         $restricted = $resolvedLocale === null || !$exposedDomain;

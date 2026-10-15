@@ -34,8 +34,8 @@ GET /api/translations/{locale}/domains/{domain}[.json]
   domain and every well-formed locale, see [Full access](#full-access).
 * **Suffix** — the `.json` suffix is optional, so a `loadPath` ending in
   `{{ns}}.json` (as the i18next default) works as well.
-* **Domain** — only domains listed in `domains` are delivered, everything
-  else responds with `404`. A domain corresponds to an i18next namespace.
+* **Domain** — only domains listed in `domains` are delivered (`*` exposes
+  every domain), everything else responds with `404`. A domain corresponds to an i18next namespace.
   It may be requested with or without `+intl-icu` suffix (`frontend` or
   `frontend+intl-icu`), both deliver the ICU and the plain messages.
 * **Locale** — Symfony compares locales as exact strings, while i18next
@@ -93,7 +93,7 @@ atoolo_translation_api:
 ```yaml
 # config/packages/atoolo_translation_api.yaml
 atoolo_translation_api:
-  domains: [frontend]          # exposed domains, empty = nothing is exposed
+  domains: [frontend]          # exposed domains, empty = nothing, '*' = every domain
   locales: [de, en]            # allowed locales, default: framework.enabled_locales
   full_access_role: ~          # e.g. ROLE_TRANSLATOR, see "Full access"
   cache_max_age: 300           # seconds
@@ -106,6 +106,12 @@ from `var/infosite_translations`, see `SP\SiteKit\Translation\InfositeTranslatio
 
 **Never expose domains that contain internal texts** — every message of an
 exposed domain is publicly readable.
+
+`domains: ['*']` exposes every domain the translator knows — including
+those of other bundles (e.g. `validators`, `security`), runtime resources
+(e.g. the Infosite language packages) and every domain added by a future
+update. Use it only if all of them are meant to be public, e.g. because they
+only contain texts shown to visitors anyway.
 
 ## Full access
 

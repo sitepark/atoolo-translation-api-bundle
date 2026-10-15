@@ -65,6 +65,11 @@ class ConfigurationTest extends TestCase
         $this->process(['full_access_role' => '']);
     }
 
+    public function testAcceptsWildcardDomain(): void
+    {
+        $this->assertSame(['*'], $this->process(['domains' => ['*']])['domains']);
+    }
+
     public function testRejectsEmptyDomain(): void
     {
         $this->expectException(InvalidConfigurationException::class);

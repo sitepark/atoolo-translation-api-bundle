@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atoolo\TranslationApi\Controller;
 
 use Atoolo\TranslationApi\Service\DomainLister;
-use Atoolo\TranslationApi\Service\DomainName;
+use Atoolo\TranslationApi\Service\ExposedDomains;
 use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\LocaleResolver;
@@ -25,15 +25,12 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class TranslationDomainsController
 {
-    /**
-     * @param list<string> $domains
-     */
     public function __construct(
         private readonly DomainLister $domainLister,
         private readonly LocaleResolver $localeResolver,
         private readonly FullAccessChecker $fullAccessChecker,
         private readonly JsonResponseFactory $responseFactory,
-        private readonly array $domains,
+        private readonly ExposedDomains $exposedDomains,
     ) {}
 
     /**
@@ -57,11 +54,9 @@ final class TranslationDomainsController
 
         $domains = $this->domainLister->list($resolvedLocale);
         if (!$fullAccess) {
-            $exposed = array_map(DomainName::base(...), $this->domains);
             $domains = array_values(array_filter(
                 $domains,
-                static fn(string $domain): bool
-                    => in_array(DomainName::base($domain), $exposed, true),
+                $this->exposedDomains->isExposed(...),
             ));
         }
 

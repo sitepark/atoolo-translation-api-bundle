@@ -26,14 +26,14 @@ services:
     arguments:
       $translator: '@translator'
 
-  Atoolo\TranslationApi\Controller\TranslationController:
+  Atoolo\TranslationApi\Service\ExposedDomains:
     arguments:
       $domains: '%atoolo_translation_api.domains%'
+
+  Atoolo\TranslationApi\Controller\TranslationController:
     tags:
       - { name: controller.service_arguments }
 
   Atoolo\TranslationApi\Controller\TranslationDomainsController:
-    arguments:
-      $domains: '%atoolo_translation_api.domains%'
     tags:
       - { name: controller.service_arguments }

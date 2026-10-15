@@ -16,7 +16,7 @@ class Configuration implements ConfigurationInterface
         $treeBuilder->getRootNode()
             ->children()
                 ->arrayNode('domains')
-                    ->info('Translation domains that may be fetched. Everything else responds with 404.')
+                    ->info('Translation domains that may be fetched without full access, with or without "+intl-icu" suffix. "*" exposes every domain. Everything else responds with 404.')
                     ->scalarPrototype()->cannotBeEmpty()->end()
                     ->defaultValue([])
                 ->end()

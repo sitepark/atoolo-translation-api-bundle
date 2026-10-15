@@ -6,6 +6,7 @@ namespace Atoolo\TranslationApi\Test\Controller;
 
 use Atoolo\TranslationApi\Controller\TranslationDomainsController;
 use Atoolo\TranslationApi\Service\DomainLister;
+use Atoolo\TranslationApi\Service\ExposedDomains;
 use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\LocaleResolver;
@@ -20,8 +21,13 @@ use Symfony\Component\Translation\Translator;
 #[CoversClass(TranslationDomainsController::class)]
 class TranslationDomainsControllerTest extends TestCase
 {
-    private function createController(bool $fullAccess = false): TranslationDomainsController
-    {
+    /**
+     * @param list<string> $domains
+     */
+    private function createController(
+        bool $fullAccess = false,
+        array $domains = ['frontend', 'empty', 'legacy'],
+    ): TranslationDomainsController {
         $translator = new Translator('en');
         $translator->addLoader('array', new ArrayLoader());
         $translator->addResource('array', ['a' => 'A'], 'de', 'frontend+intl-icu');
@@ -36,7 +42,7 @@ class TranslationDomainsControllerTest extends TestCase
             new LocaleResolver(['de']),
             new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
             new JsonResponseFactory(600),
-            ['frontend', 'empty', 'legacy'],
+            new ExposedDomains($domains),
         );
     }
 
@@ -46,6 +52,13 @@ class TranslationDomainsControllerTest extends TestCase
 
         $this->assertSame('["frontend+intl-icu"]', $response->getContent());
         $this->assertTrue($response->headers->hasCacheControlDirective('private'));
+    }
+
+    public function testWildcardListsEveryDomain(): void
+    {
+        $response = ($this->createController(domains: ['*']))(new Request(), 'de');
+
+        $this->assertSame('["frontend+intl-icu","internal"]', $response->getContent());
     }
 
     public function testListsAllDomainsWithFullAccess(): void

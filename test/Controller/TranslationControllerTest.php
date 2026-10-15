@@ -6,6 +6,7 @@ namespace Atoolo\TranslationApi\Test\Controller;
 
 use Atoolo\TranslationApi\Controller\TranslationController;
 use Atoolo\TranslationApi\Service\CatalogueExporter;
+use Atoolo\TranslationApi\Service\ExposedDomains;
 use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
@@ -21,8 +22,13 @@ use Symfony\Component\Translation\Translator;
 #[CoversClass(TranslationController::class)]
 class TranslationControllerTest extends TestCase
 {
-    private function createController(bool $fullAccess = false): TranslationController
-    {
+    /**
+     * @param list<string> $domains
+     */
+    private function createController(
+        bool $fullAccess = false,
+        array $domains = ['frontend', 'empty+intl-icu'],
+    ): TranslationController {
         $translator = new Translator('en');
         $translator->addLoader('array', new ArrayLoader());
         $translator->addResource('array', [
@@ -47,7 +53,7 @@ class TranslationControllerTest extends TestCase
             new KeyNester(),
             new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
             new JsonResponseFactory(600),
-            ['frontend', 'empty+intl-icu'],
+            new ExposedDomains($domains),
         );
     }
 
@@ -107,6 +113,14 @@ class TranslationControllerTest extends TestCase
         $response = ($this->createController())(new Request(), 'de', 'empty');
 
         $this->assertSame(200, $response->getStatusCode());
+    }
+
+    public function testWildcardExposesEveryDomain(): void
+    {
+        $response = ($this->createController(domains: ['*']))(new Request(), 'de', 'internal');
+
+        $this->assertSame('{"secret":"Secret"}', $response->getContent());
+        $this->assertTrue($response->headers->hasCacheControlDirective('public'));
     }
 
     public function testRejectsDomainNotExposed(): void

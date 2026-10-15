@@ -150,6 +150,41 @@ class TranslationApiTest extends WebTestCase
         $this->assertStringContainsString('"greeting"', (string) $client->getResponse()->getContent());
     }
 
+    public function testDeliversAllExposedDomainsOfLocale(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/en-GB');
+
+        $this->assertResponseIsSuccessful();
+        /** @var array<string, array{cart: array{checkout: string}}> $data */
+        $data = json_decode(
+            (string) $client->getResponse()->getContent(),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertSame(['frontend+intl-icu'], array_keys($data));
+        $this->assertSame('Proceed to till', $data['frontend+intl-icu']['cart']['checkout']);
+    }
+
+    public function testDeliversAllDomainsOfLocaleWithFullAccess(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/fr.json', server: [
+            'PHP_AUTH_USER' => 'translator',
+            'PHP_AUTH_PW' => 'translator',
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        /** @var array<string, array<string, mixed>> $data */
+        $data = json_decode(
+            (string) $client->getResponse()->getContent(),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $this->assertSame(['frontend+intl-icu', 'internal+intl-icu', 'legacy'], array_keys($data));
+        $this->assertSame(['farewell' => 'Au revoir'], $data['legacy']);
+    }
+
     public function testCorsPreflight(): void
     {
         $client = static::createClient();

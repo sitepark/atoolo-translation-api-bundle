@@ -77,6 +77,28 @@ contains ICU messages. Each listed domain can be fetched as is.
   domains of every well-formed locale are listed.
 * The response is `Cache-Control: private`, as it depends on the user.
 
+### All domains of a locale
+
+```
+GET /api/translations/{locale}[.json]
+```
+
+```json
+{
+  "frontend+intl-icu": {
+    "greeting": "Hallo",
+    "cart": { "items": "{count, plural, one {# Artikel} other {# Artikel}}" }
+  },
+  "legacy": { "farewell": "Auf Wiedersehen" }
+}
+```
+
+Delivers the [listed domains](#domains-of-a-locale) together with their
+messages in one request, e.g. for tools that need the whole catalogue of a
+locale. The messages of each domain are the same as when fetched
+individually. The same restrictions apply, and the response is private as
+well.
+
 ## Installation
 
 ```php

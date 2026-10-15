@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atoolo\TranslationApi\Dev;
 
 use Atoolo\TranslationApi\AtooloTranslationApiBundle;
+use Nelmio\CorsBundle\NelmioCorsBundle;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -26,6 +27,7 @@ final class Kernel extends BaseKernel
     {
         yield new FrameworkBundle();
         yield new SecurityBundle();
+        yield new NelmioCorsBundle();
         yield new AtooloTranslationApiBundle();
     }
 
@@ -86,7 +88,18 @@ final class Kernel extends BaseKernel
             'domains' => ['frontend'],
             'locales' => ['de', 'en', 'en_GB'],
             'full_access_role' => 'ROLE_TRANSLATOR',
-            'cors_allow_origins' => ['*'],
+        ]);
+        // CORS is up to the application, as in the atoolo applications
+        $container->extension('nelmio_cors', [
+            'paths' => [
+                '^/api/translations/' => [
+                    'allow_origin' => ['*'],
+                    'forced_allow_origin_value' => '*',
+                    'allow_methods' => ['GET'],
+                    'allow_headers' => ['Authorization'],
+                    'max_age' => 3600,
+                ],
+            ],
         ]);
         if ($this->environment === 'test') {
             $container->services()->set('logger', NullLogger::class);

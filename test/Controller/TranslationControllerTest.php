@@ -20,13 +20,8 @@ use Symfony\Component\Translation\Translator;
 #[CoversClass(TranslationController::class)]
 class TranslationControllerTest extends TestCase
 {
-    /**
-     * @param list<string> $corsAllowOrigins
-     */
-    private function createController(
-        array $corsAllowOrigins = [],
-        bool $fullAccess = false,
-    ): TranslationController {
+    private function createController(bool $fullAccess = false): TranslationController
+    {
         $translator = new Translator('en');
         $translator->addLoader('array', new ArrayLoader());
         $translator->addResource('array', [
@@ -52,7 +47,6 @@ class TranslationControllerTest extends TestCase
             new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
             ['frontend', 'empty'],
             600,
-            $corsAllowOrigins,
         );
     }
 
@@ -76,6 +70,7 @@ class TranslationControllerTest extends TestCase
         $this->assertTrue($response->headers->hasCacheControlDirective('public'));
         $this->assertSame('600', $response->headers->getCacheControlDirective('max-age'));
         $this->assertNotNull($response->getEtag());
+        $this->assertSame(['Origin'], $response->getVary());
     }
 
     public function testRespondsNotModifiedForMatchingEtag(): void
@@ -139,46 +134,5 @@ class TranslationControllerTest extends TestCase
     {
         $this->expectException(NotFoundHttpException::class);
         ($this->createController(fullAccess: true))(new Request(), '../de', 'frontend');
-    }
-
-    public function testNoCorsHeadersWithoutConfiguredOrigins(): void
-    {
-        $request = new Request();
-        $request->headers->set('Origin', 'https://example.com');
-        $response = ($this->createController())($request, 'de', 'frontend');
-
-        $this->assertFalse($response->headers->has('Access-Control-Allow-Origin'));
-    }
-
-    public function testCorsWildcard(): void
-    {
-        $request = new Request();
-        $request->headers->set('Origin', 'https://example.com');
-        $response = ($this->createController(['*']))($request, 'de', 'frontend');
-
-        $this->assertSame('*', $response->headers->get('Access-Control-Allow-Origin'));
-    }
-
-    public function testCorsAllowedOrigin(): void
-    {
-        $request = new Request();
-        $request->headers->set('Origin', 'https://example.com');
-        $response = ($this->createController(['https://example.com']))($request, 'de', 'frontend');
-
-        $this->assertSame(
-            'https://example.com',
-            $response->headers->get('Access-Control-Allow-Origin'),
-        );
-        $this->assertSame(['Origin'], $response->getVary());
-    }
-
-    public function testCorsForeignOrigin(): void
-    {
-        $request = new Request();
-        $request->headers->set('Origin', 'https://evil.example');
-        $response = ($this->createController(['https://example.com']))($request, 'de', 'frontend');
-
-        $this->assertFalse($response->headers->has('Access-Control-Allow-Origin'));
-        $this->assertSame(['Origin'], $response->getVary());
     }
 }

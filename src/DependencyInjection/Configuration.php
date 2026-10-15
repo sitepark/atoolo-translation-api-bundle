@@ -35,11 +35,6 @@ class Configuration implements ConfigurationInterface
                     ->min(0)
                     ->defaultValue(300)
                 ->end()
-                ->arrayNode('cors_allow_origins')
-                    ->info('Origins that may fetch the translations cross-origin, "*" allows every origin.')
-                    ->scalarPrototype()->cannotBeEmpty()->end()
-                    ->defaultValue([])
-                ->end()
             ->end();
 
         return $treeBuilder;

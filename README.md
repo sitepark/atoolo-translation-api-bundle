@@ -49,11 +49,10 @@ GET /api/translations/{locale}/{domain}[.json]
   If a key is both a message and the prefix of other keys (`a` and `a.b`),
   the longer key is kept flat (`{"a": "…", "a.b": "…"}`); i18next resolves
   this as well.
-* **Caching** — `Cache-Control: public, max-age=<cache_max_age>` and an
-  `ETag`; `If-None-Match` is answered with `304`.
-* **CORS** — `Access-Control-Allow-Origin` is set for origins listed in
-  `cors_allow_origins`. No preflight is needed, as `i18next-http-backend`
-  sends simple GET requests.
+* **Caching** — `Cache-Control: public, max-age=<cache_max_age>`,
+  `Vary: Origin` (CORS headers may depend on it) and an `ETag`;
+  `If-None-Match` is answered with `304`.
+* **CORS** — is up to the application, see [CORS](#cors).
 
 ## Installation
 
@@ -75,7 +74,6 @@ atoolo_translation_api:
   locales: [de, en]            # allowed locales, default: framework.enabled_locales
   full_access_role: ~          # e.g. ROLE_TRANSLATOR, see "Full access"
   cache_max_age: 300           # seconds
-  cors_allow_origins: []       # e.g. ['https://www.example.com'] or ['*']
 ```
 
 The bundle uses the `translator` service and thus sees everything the
@@ -125,9 +123,36 @@ Applications using `atoolo/security-bundle` need no additional firewall: the
   an invalid or expired token responds with `401`.
 * Roles of IES and SiteKit users are mapped to `ROLE_<NAME>` in upper case,
   so the role `translator` is configured as `full_access_role: ROLE_TRANSLATOR`.
-* The `Authorization` header causes a CORS preflight (`OPTIONS`) for
-  cross-origin requests, which this bundle does not answer. Same-origin and
-  server-to-server requests work as is.
+* Cross-origin requests with token need `Authorization` in the allowed
+  headers of the CORS configuration, see [CORS](#cors).
+
+## CORS
+
+As the other atoolo bundles, this bundle sets no CORS headers. Cross-origin
+access is configured in the application with
+[`nelmio/cors-bundle`](https://github.com/nelmio/NelmioCorsBundle), which
+also answers preflight requests (`OPTIONS`). Without matching `paths`, nelmio
+applies its `defaults` to every path — and thus to `/api/translations` as
+well. Anonymous i18next requests are simple GET requests without preflight,
+requests with an `Authorization` header (full access) need one.
+
+```yaml
+# config/packages/nelmio_cors.yaml
+nelmio_cors:
+  paths:
+    '^/api/translations/':
+      allow_origin: ['*']
+      forced_allow_origin_value: '*'
+      allow_methods: ['GET']
+      allow_headers: ['Authorization']
+      max_age: 3600
+```
+
+* `forced_allow_origin_value: '*'` sets the header on every response, even
+  without `Origin`. Otherwise nelmio echoes the requesting origin, so every
+  origin gets its own cache entry (`Vary: Origin`).
+* `allow_origin: ['*']` suffices for bearer tokens, as they are no
+  credentials in terms of CORS (unlike cookies).
 
 ## i18next setup
 
@@ -180,6 +205,7 @@ curl -i http://localhost:8000/api/translations/de/frontend
 curl -i -u translator:translator http://localhost:8000/api/translations/en/internal
 ```
 
-It allows every CORS origin, so e.g. the i18next demo can use
-`http://localhost:8000/api/translations/{{lng}}/{{ns}}` as API URL.
+It allows every CORS origin (via `nelmio/cors-bundle`), so e.g. the i18next
+demo can use `http://localhost:8000/api/translations/{{lng}}/{{ns}}` as API
+URL.
 The functional tests run against the same application.

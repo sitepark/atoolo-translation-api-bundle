@@ -22,7 +22,9 @@ class TranslationApiTest extends WebTestCase
     public function testDeliversTranslationsWithFallback(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/api/translations/en-GB/frontend');
+        $client->request('GET', '/api/translations/en-GB/frontend', server: [
+            'HTTP_ORIGIN' => 'https://example.com',
+        ]);
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
@@ -104,6 +106,20 @@ class TranslationApiTest extends WebTestCase
             'Hello from Symfony!',
             (string) $client->getResponse()->getContent(),
         );
+    }
+
+    public function testCorsPreflight(): void
+    {
+        $client = static::createClient();
+        $client->request('OPTIONS', '/api/translations/en/internal', server: [
+            'HTTP_ORIGIN' => 'https://example.com',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
+            'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'Authorization',
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertResponseHeaderSame('Access-Control-Allow-Origin', '*');
+        $this->assertResponseHeaderSame('Access-Control-Allow-Headers', 'authorization');
     }
 
     public function testWrongCredentials(): void

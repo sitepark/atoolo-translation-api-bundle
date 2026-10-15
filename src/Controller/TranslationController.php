@@ -24,12 +24,14 @@ use Symfony\Component\Routing\Attribute\Route;
  * Users with full access (see {@see FullAccessChecker}) may additionally
  * fetch every domain and well-formed locale. These responses must not be
  * stored by shared caches and are therefore private.
+ *
+ * CORS headers are up to the application (e.g. nelmio/cors-bundle). As they
+ * may depend on the `Origin` of the request, the responses vary by it.
  */
 final class TranslationController
 {
     /**
      * @param list<string> $domains
-     * @param list<string> $corsAllowOrigins
      */
     public function __construct(
         private readonly CatalogueExporter $exporter,
@@ -38,7 +40,6 @@ final class TranslationController
         private readonly FullAccessChecker $fullAccessChecker,
         private readonly array $domains,
         private readonly int $cacheMaxAge,
-        private readonly array $corsAllowOrigins,
     ) {}
 
     /**
@@ -82,32 +83,16 @@ final class TranslationController
             | JSON_FORCE_OBJECT,
         );
         $response->setData($messages);
-        $this->addCorsHeaders($request, $response);
         if ($restricted) {
             $response->setPrivate();
         } else {
             $response->setPublic();
         }
         $response->setMaxAge($this->cacheMaxAge);
+        $response->setVary('Origin');
         $response->setEtag(hash('xxh128', (string) $response->getContent()));
         $response->isNotModified($request);
 
         return $response;
-    }
-
-    private function addCorsHeaders(Request $request, Response $response): void
-    {
-        if ($this->corsAllowOrigins === []) {
-            return;
-        }
-        if (in_array('*', $this->corsAllowOrigins, true)) {
-            $response->headers->set('Access-Control-Allow-Origin', '*');
-            return;
-        }
-        $response->setVary('Origin', false);
-        $origin = $request->headers->get('Origin');
-        if ($origin !== null && in_array($origin, $this->corsAllowOrigins, true)) {
-            $response->headers->set('Access-Control-Allow-Origin', $origin);
-        }
     }
 }

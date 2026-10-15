@@ -22,6 +22,5 @@ services:
     arguments:
       $domains: '%atoolo_translation_api.domains%'
       $cacheMaxAge: '%atoolo_translation_api.cache_max_age%'
-      $corsAllowOrigins: '%atoolo_translation_api.cors_allow_origins%'
     tags:
       - { name: controller.service_arguments }

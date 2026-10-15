@@ -114,6 +114,21 @@ security:
       http_basic: true
 ```
 
+### With atoolo/security-bundle
+
+Applications using `atoolo/security-bundle` need no additional firewall: the
+`api` firewall of its recipe (`^/api`, stateless, JWT) already covers
+`/api/translations`.
+
+* Clients fetch a token via `POST /api/login_check` and send it as
+  `Authorization: Bearer <token>`. Requests without token stay anonymous,
+  an invalid or expired token responds with `401`.
+* Roles of IES and SiteKit users are mapped to `ROLE_<NAME>` in upper case,
+  so the role `translator` is configured as `full_access_role: ROLE_TRANSLATOR`.
+* The `Authorization` header causes a CORS preflight (`OPTIONS`) for
+  cross-origin requests, which this bundle does not answer. Same-origin and
+  server-to-server requests work as is.
+
 ## i18next setup
 
 Since the messages are ICU, i18next needs the ICU plugin:

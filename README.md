@@ -12,7 +12,9 @@ them — for machine translation of translation files see `translate-api`.
 
 > **Status:** prototype
 
-## Endpoint
+## Endpoints
+
+### Messages
 
 ```
 GET /api/translations/{locale}/domains/{domain}[.json]
@@ -34,6 +36,8 @@ GET /api/translations/{locale}/domains/{domain}[.json]
   `{{ns}}.json` (as the i18next default) works as well.
 * **Domain** — only domains listed in `domains` are delivered, everything
   else responds with `404`. A domain corresponds to an i18next namespace.
+  It may be requested with or without `+intl-icu` suffix (`frontend` or
+  `frontend+intl-icu`), both deliver the ICU and the plain messages.
 * **Locale** — Symfony compares locales as exact strings, while i18next
   requests BCP 47 tags (`en-GB`). The requested locale is therefore matched
   against `locales` (default: `framework.enabled_locales`) ignoring case and
@@ -53,6 +57,25 @@ GET /api/translations/{locale}/domains/{domain}[.json]
   `Vary: Origin` (CORS headers may depend on it) and an `ETag`;
   `If-None-Match` is answered with `304`.
 * **CORS** — is up to the application, see [CORS](#cors).
+
+### Domains of a locale
+
+```
+GET /api/translations/{locale}/domains[.json]
+```
+
+```json
+["frontend+intl-icu", "legacy"]
+```
+
+Lists the domains that have messages in the locale or one of its fallback
+locales, sorted and named in full: with `+intl-icu` suffix if the domain
+contains ICU messages. Each listed domain can be fetched as is.
+
+* The same restrictions as for the messages apply: only domains listed in
+  `domains` of allowed locales, otherwise `404`. With full access, all
+  domains of every well-formed locale are listed.
+* The response is `Cache-Control: private`, as it depends on the user.
 
 ## Installation
 
@@ -87,8 +110,9 @@ exposed domain is publicly readable.
 ## Full access
 
 Users granted the `full_access_role` may fetch every domain and every
-well-formed locale, regardless of `domains` and `locales` (e.g. for
-translation tools that need all catalogues):
+well-formed locale and list all domains of a locale, regardless of
+`domains` and `locales` (e.g. for translation tools that need all
+catalogues):
 
 * The role is checked with `isGranted()`, so a voter attribute works as well.
   It is only checked if the request is not allowed anyway.

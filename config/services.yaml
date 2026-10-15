@@ -18,9 +18,22 @@ services:
       $authorizationChecker: '@?security.authorization_checker'
       $role: '%atoolo_translation_api.full_access_role%'
 
+  Atoolo\TranslationApi\Service\JsonResponseFactory:
+    arguments:
+      $cacheMaxAge: '%atoolo_translation_api.cache_max_age%'
+
+  Atoolo\TranslationApi\Service\DomainLister:
+    arguments:
+      $translator: '@translator'
+
   Atoolo\TranslationApi\Controller\TranslationController:
     arguments:
       $domains: '%atoolo_translation_api.domains%'
-      $cacheMaxAge: '%atoolo_translation_api.cache_max_age%'
+    tags:
+      - { name: controller.service_arguments }
+
+  Atoolo\TranslationApi\Controller\TranslationDomainsController:
+    arguments:
+      $domains: '%atoolo_translation_api.domains%'
     tags:
       - { name: controller.service_arguments }

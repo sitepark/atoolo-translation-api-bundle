@@ -7,6 +7,7 @@ namespace Atoolo\TranslationApi\Test\Controller;
 use Atoolo\TranslationApi\Controller\TranslationController;
 use Atoolo\TranslationApi\Service\CatalogueExporter;
 use Atoolo\TranslationApi\Service\FullAccessChecker;
+use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
 use Atoolo\TranslationApi\Service\LocaleResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -45,8 +46,8 @@ class TranslationControllerTest extends TestCase
             new LocaleResolver(['de', 'en']),
             new KeyNester(),
             new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
-            ['frontend', 'empty'],
-            600,
+            new JsonResponseFactory(600),
+            ['frontend', 'empty+intl-icu'],
         );
     }
 
@@ -92,6 +93,20 @@ class TranslationControllerTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('{}', $response->getContent());
+    }
+
+    public function testAcceptsIcuSuffix(): void
+    {
+        $response = ($this->createController())(new Request(), 'de', 'frontend+intl-icu');
+
+        $this->assertStringContainsString('"greeting":"Grüße"', (string) $response->getContent());
+    }
+
+    public function testMatchesConfiguredDomainWithIcuSuffix(): void
+    {
+        $response = ($this->createController())(new Request(), 'de', 'empty');
+
+        $this->assertSame(200, $response->getStatusCode());
     }
 
     public function testRejectsDomainNotExposed(): void

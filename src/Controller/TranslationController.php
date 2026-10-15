@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Atoolo\TranslationApi\Controller;
 
 use Atoolo\TranslationApi\Service\CatalogueExporter;
+use Atoolo\TranslationApi\Service\DomainName;
 use Atoolo\TranslationApi\Service\FullAccessChecker;
+use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
 use Atoolo\TranslationApi\Service\LocaleResolver;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -19,14 +20,12 @@ use Symfony\Component\Routing\Attribute\Route;
  * by the i18next http backend (`loadPath: '/api/translations/{{lng}}/domains/{{ns}}'`,
  * the `.json` suffix of the i18next default load path is optional).
  * The messages are delivered unchanged, i.e. in ICU message format if the
- * domain uses it.
+ * domain uses it. The domain may be requested with or without `+intl-icu`
+ * suffix, both deliver the ICU and the plain messages of the domain.
  *
  * Users with full access (see {@see FullAccessChecker}) may additionally
  * fetch every domain and well-formed locale. These responses must not be
  * stored by shared caches and are therefore private.
- *
- * CORS headers are up to the application (e.g. nelmio/cors-bundle). As they
- * may depend on the `Origin` of the request, the responses vary by it.
  */
 final class TranslationController
 {
@@ -38,8 +37,8 @@ final class TranslationController
         private readonly LocaleResolver $localeResolver,
         private readonly KeyNester $keyNester,
         private readonly FullAccessChecker $fullAccessChecker,
+        private readonly JsonResponseFactory $responseFactory,
         private readonly array $domains,
-        private readonly int $cacheMaxAge,
     ) {}
 
     /**
@@ -56,8 +55,13 @@ final class TranslationController
     )]
     public function __invoke(Request $request, string $locale, string $domain): Response
     {
+        $domain = DomainName::base($domain);
         $resolvedLocale = $this->localeResolver->resolve($locale);
-        $exposedDomain = in_array($domain, $this->domains, true);
+        $exposedDomain = in_array(
+            $domain,
+            array_map(DomainName::base(...), $this->domains),
+            true,
+        );
         // full access is only checked if needed, so that the responses of
         // public requests stay publicly cacheable
         $restricted = $resolvedLocale === null || !$exposedDomain;
@@ -76,23 +80,11 @@ final class TranslationController
             $this->exporter->export($resolvedLocale, $domain),
         );
 
-        $response = new JsonResponse();
-        $response->setEncodingOptions(
-            JSON_UNESCAPED_UNICODE
-            | JSON_UNESCAPED_SLASHES
-            | JSON_FORCE_OBJECT,
+        return $this->responseFactory->create(
+            $request,
+            $messages,
+            !$restricted,
+            JSON_FORCE_OBJECT,
         );
-        $response->setData($messages);
-        if ($restricted) {
-            $response->setPrivate();
-        } else {
-            $response->setPublic();
-        }
-        $response->setMaxAge($this->cacheMaxAge);
-        $response->setVary('Origin');
-        $response->setEtag(hash('xxh128', (string) $response->getContent()));
-        $response->isNotModified($request);
-
-        return $response;
     }
 }

@@ -108,6 +108,48 @@ class TranslationApiTest extends WebTestCase
         );
     }
 
+    public function testListsExposedDomains(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/de/domains');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('["frontend+intl-icu"]', $client->getResponse()->getContent());
+    }
+
+    public function testListsDomainsOfLocaleNotAllowedWithFullAccess(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/fr/domains.json', server: [
+            'PHP_AUTH_USER' => 'translator',
+            'PHP_AUTH_PW' => 'translator',
+        ]);
+
+        // the domains of the fallback locale "en" are included
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(
+            '["frontend+intl-icu","internal+intl-icu","legacy"]',
+            $client->getResponse()->getContent(),
+        );
+    }
+
+    public function testDomainListOfLocaleNotAllowed(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/fr/domains');
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testFetchesListedIcuDomain(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/de/domains/frontend+intl-icu');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('"greeting"', (string) $client->getResponse()->getContent());
+    }
+
     public function testCorsPreflight(): void
     {
         $client = static::createClient();

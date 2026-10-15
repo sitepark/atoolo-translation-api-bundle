@@ -6,12 +6,14 @@ namespace Atoolo\TranslationApi\Test\Controller;
 
 use Atoolo\TranslationApi\Controller\TranslationController;
 use Atoolo\TranslationApi\Service\CatalogueExporter;
+use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\KeyNester;
 use Atoolo\TranslationApi\Service\LocaleResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Translation\Loader\ArrayLoader;
 use Symfony\Component\Translation\Translator;
 
@@ -21,8 +23,10 @@ class TranslationControllerTest extends TestCase
     /**
      * @param list<string> $corsAllowOrigins
      */
-    private function createController(array $corsAllowOrigins = []): TranslationController
-    {
+    private function createController(
+        array $corsAllowOrigins = [],
+        bool $fullAccess = false,
+    ): TranslationController {
         $translator = new Translator('en');
         $translator->addLoader('array', new ArrayLoader());
         $translator->addResource('array', [
@@ -34,11 +38,18 @@ class TranslationControllerTest extends TestCase
         $translator->addResource('array', [
             'secret' => 'Secret',
         ], 'de', 'internal+intl-icu');
+        $translator->addResource('array', [
+            'greeting' => 'Bonjour',
+        ], 'fr', 'frontend+intl-icu');
+
+        $authorizationChecker = $this->createStub(AuthorizationCheckerInterface::class);
+        $authorizationChecker->method('isGranted')->willReturn($fullAccess);
 
         return new TranslationController(
             new CatalogueExporter($translator),
             new LocaleResolver(['de', 'en']),
             new KeyNester(),
+            new FullAccessChecker($authorizationChecker, 'ROLE_TRANSLATOR'),
             ['frontend', 'empty'],
             600,
             $corsAllowOrigins,
@@ -98,6 +109,36 @@ class TranslationControllerTest extends TestCase
     {
         $this->expectException(NotFoundHttpException::class);
         ($this->createController())(new Request(), 'fr', 'frontend');
+    }
+
+    public function testFullAccessToDomainNotExposed(): void
+    {
+        $response = ($this->createController(fullAccess: true))(new Request(), 'de', 'internal');
+
+        $this->assertSame('{"secret":"Secret"}', $response->getContent());
+        $this->assertTrue($response->headers->hasCacheControlDirective('private'));
+        $this->assertFalse($response->headers->hasCacheControlDirective('public'));
+    }
+
+    public function testFullAccessToLocaleNotAllowed(): void
+    {
+        $response = ($this->createController(fullAccess: true))(new Request(), 'fr', 'frontend');
+
+        $this->assertSame('{"greeting":"Bonjour"}', $response->getContent());
+        $this->assertTrue($response->headers->hasCacheControlDirective('private'));
+    }
+
+    public function testFullAccessKeepsPublicResponsePublic(): void
+    {
+        $response = ($this->createController(fullAccess: true))(new Request(), 'de', 'frontend');
+
+        $this->assertTrue($response->headers->hasCacheControlDirective('public'));
+    }
+
+    public function testFullAccessRejectsMalformedLocale(): void
+    {
+        $this->expectException(NotFoundHttpException::class);
+        ($this->createController(fullAccess: true))(new Request(), '../de', 'frontend');
     }
 
     public function testNoCorsHeadersWithoutConfiguredOrigins(): void

@@ -22,22 +22,24 @@ class LocaleResolver
     ) {}
 
     /**
+     * @param bool $unrestricted accept well-formed locales that are not
+     *     allowed in their ICU spelling (`en_GB`, `zh_Hans`)
      * @return string|null the configured spelling of the locale or `null`
      *     if the locale is malformed or not allowed
      */
-    public function resolve(string $requested): ?string
+    public function resolve(string $requested, bool $unrestricted = false): ?string
     {
         if (preg_match(self::LOCALE_PATTERN, $requested) !== 1) {
             return null;
-        }
-        if ($this->locales === []) {
-            return \Locale::canonicalize($requested);
         }
         $normalized = $this->normalize($requested);
         foreach ($this->locales as $locale) {
             if ($this->normalize($locale) === $normalized) {
                 return $locale;
             }
+        }
+        if ($unrestricted || $this->locales === []) {
+            return \Locale::canonicalize($requested);
         }
         return null;
     }

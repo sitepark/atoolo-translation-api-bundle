@@ -28,6 +28,8 @@ GET /api/translations/{locale}/{domain}[.json]
 }
 ```
 
+* **Full access** — users with the `full_access_role` may fetch every
+  domain and every well-formed locale, see [Full access](#full-access).
 * **Suffix** — the `.json` suffix is optional, so the i18next default
   `loadPath` (`…/{{lng}}/{{ns}}.json`) works as well.
 * **Domain** — only domains listed in `domains` are delivered, everything
@@ -71,6 +73,7 @@ atoolo_translation_api:
 atoolo_translation_api:
   domains: [frontend]          # exposed domains, empty = nothing is exposed
   locales: [de, en]            # allowed locales, default: framework.enabled_locales
+  full_access_role: ~          # e.g. ROLE_TRANSLATOR, see "Full access"
   cache_max_age: 300           # seconds
   cors_allow_origins: []       # e.g. ['https://www.example.com'] or ['*']
 ```
@@ -82,6 +85,34 @@ from `var/infosite_translations`, see `SP\SiteKit\Translation\InfositeTranslatio
 
 **Never expose domains that contain internal texts** — every message of an
 exposed domain is publicly readable.
+
+## Full access
+
+Users granted the `full_access_role` may fetch every domain and every
+well-formed locale, regardless of `domains` and `locales` (e.g. for
+translation tools that need all catalogues):
+
+* The role is checked with `isGranted()`, so a voter attribute works as well.
+  It is only checked if the request is not allowed anyway.
+* Locales that are not allowed are delivered in their ICU spelling (`pt-BR` →
+  `pt_BR`), allowed locales keep their configured spelling.
+* These responses are `Cache-Control: private` and thus not stored by shared
+  caches (reverse proxies, CDN).
+
+The bundle does not authenticate users. This is up to the firewall of the
+application (`symfony/security-bundle`), which must cover the path
+`/api/translations`. Without the security bundle or without
+`full_access_role` nobody has full access. Example with HTTP Basic:
+
+```yaml
+# config/packages/security.yaml
+security:
+  firewalls:
+    translation_api:
+      pattern: ^/api/translations/
+      stateless: true
+      http_basic: true
+```
 
 ## i18next setup
 
@@ -130,6 +161,8 @@ composer analyse
 ```sh
 composer serve-dev
 curl -i http://localhost:8000/api/translations/de/frontend
+# full access: user "translator", password "translator"
+curl -i -u translator:translator http://localhost:8000/api/translations/en/internal
 ```
 
 It allows every CORS origin, so e.g. the i18next demo can use

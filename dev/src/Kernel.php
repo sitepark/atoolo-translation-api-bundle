@@ -8,8 +8,10 @@ use Atoolo\TranslationApi\AtooloTranslationApiBundle;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use Symfony\Component\Security\Core\User\InMemoryUser;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /**
@@ -23,6 +25,7 @@ final class Kernel extends BaseKernel
     public function registerBundles(): iterable
     {
         yield new FrameworkBundle();
+        yield new SecurityBundle();
         yield new AtooloTranslationApiBundle();
     }
 
@@ -55,9 +58,34 @@ final class Kernel extends BaseKernel
                 'fallbacks' => ['en'],
             ],
         ]);
+        // the user "translator" (password "translator") has full access
+        $container->extension('security', [
+            'password_hashers' => [
+                InMemoryUser::class => 'plaintext',
+            ],
+            'providers' => [
+                'users' => [
+                    'memory' => [
+                        'users' => [
+                            'translator' => [
+                                'password' => 'translator',
+                                'roles' => ['ROLE_TRANSLATOR'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'firewalls' => [
+                'api' => [
+                    'stateless' => true,
+                    'http_basic' => true,
+                ],
+            ],
+        ]);
         $container->extension('atoolo_translation_api', [
             'domains' => ['frontend'],
             'locales' => ['de', 'en', 'en_GB'],
+            'full_access_role' => 'ROLE_TRANSLATOR',
             'cors_allow_origins' => ['*'],
         ]);
         if ($this->environment === 'test') {

@@ -72,6 +72,51 @@ class TranslationApiTest extends WebTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testFullAccessToDomainNotExposed(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/en/internal', server: [
+            'PHP_AUTH_USER' => 'translator',
+            'PHP_AUTH_PW' => 'translator',
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(
+            '{"secret":"This domain is not exposed."}',
+            $client->getResponse()->getContent(),
+        );
+        $this->assertTrue(
+            $client->getResponse()->headers->hasCacheControlDirective('private'),
+        );
+    }
+
+    public function testFullAccessToLocaleNotAllowed(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/fr/frontend', server: [
+            'PHP_AUTH_USER' => 'translator',
+            'PHP_AUTH_PW' => 'translator',
+        ]);
+
+        // no French messages, but the fallback locale applies
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString(
+            'Hello from Symfony!',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
+    public function testWrongCredentials(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/en/internal', server: [
+            'PHP_AUTH_USER' => 'translator',
+            'PHP_AUTH_PW' => 'wrong',
+        ]);
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
     public function testOnlyGetIsAllowed(): void
     {
         $client = static::createClient();

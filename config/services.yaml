@@ -13,6 +13,11 @@ services:
 
   Atoolo\TranslationApi\Service\KeyNester: ~
 
+  Atoolo\TranslationApi\Service\FullAccessChecker:
+    arguments:
+      $authorizationChecker: '@?security.authorization_checker'
+      $role: '%atoolo_translation_api.full_access_role%'
+
   Atoolo\TranslationApi\Controller\TranslationController:
     arguments:
       $domains: '%atoolo_translation_api.domains%'

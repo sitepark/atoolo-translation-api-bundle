@@ -31,6 +31,7 @@ class ConfigurationTest extends TestCase
             [
                 'domains' => [],
                 'locales' => [],
+                'full_access_role' => null,
                 'cache_max_age' => 300,
                 'cors_allow_origins' => [],
             ],
@@ -43,12 +44,14 @@ class ConfigurationTest extends TestCase
         $config = $this->process([
             'domains' => ['frontend'],
             'locales' => ['de', 'en_GB'],
+            'full_access_role' => 'ROLE_TRANSLATOR',
             'cache_max_age' => 0,
             'cors_allow_origins' => ['*'],
         ]);
 
         $this->assertSame(['frontend'], $config['domains']);
         $this->assertSame(['de', 'en_GB'], $config['locales']);
+        $this->assertSame('ROLE_TRANSLATOR', $config['full_access_role']);
         $this->assertSame(0, $config['cache_max_age']);
         $this->assertSame(['*'], $config['cors_allow_origins']);
     }
@@ -57,6 +60,12 @@ class ConfigurationTest extends TestCase
     {
         $this->expectException(InvalidConfigurationException::class);
         $this->process(['cache_max_age' => -1]);
+    }
+
+    public function testRejectsEmptyFullAccessRole(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->process(['full_access_role' => '']);
     }
 
     public function testRejectsEmptyDomain(): void

@@ -41,4 +41,24 @@ class LocaleResolverTest extends TestCase
         $resolver = new LocaleResolver($allowed);
         $this->assertSame($expected, $resolver->resolve($requested));
     }
+
+    /**
+     * @return iterable<string, array{list<string>, string, ?string}>
+     */
+    public static function unrestrictedLocales(): iterable
+    {
+        yield 'configured spelling wins' => [['en-gb'], 'en-GB', 'en-gb'];
+        yield 'not allowed in ICU spelling' => [['de'], 'pt-BR', 'pt_BR'];
+        yield 'malformed' => [['de'], '../de', null];
+    }
+
+    /**
+     * @param list<string> $allowed
+     */
+    #[DataProvider('unrestrictedLocales')]
+    public function testResolveUnrestricted(array $allowed, string $requested, ?string $expected): void
+    {
+        $resolver = new LocaleResolver($allowed);
+        $this->assertSame($expected, $resolver->resolve($requested, true));
+    }
 }

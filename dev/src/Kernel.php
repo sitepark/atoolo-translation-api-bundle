@@ -13,7 +13,11 @@ use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Security\Core\User\InMemoryUser;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 
 /**
  * Minimal application to try out the bundle (e.g. with the i18next demo) and
@@ -101,6 +105,13 @@ final class Kernel extends BaseKernel
                 ],
             ],
         ]);
+        // an additional source of messages, e.g. ?source=overrides
+        $container->services()
+            ->set('dev.translation_source.overrides', Translator::class)
+            ->args(['en'])
+            ->call('addLoader', ['array', inline_service(ArrayLoader::class)])
+            ->call('addResource', ['array', ['greeting' => 'Moin!'], 'de', 'frontend+intl-icu'])
+            ->tag('atoolo_translation_api.source', ['source' => 'overrides']);
         if ($this->environment === 'test') {
             $container->services()->set('logger', NullLogger::class);
         }

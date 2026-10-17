@@ -13,6 +13,8 @@ use Symfony\Component\Translation\Translator;
 #[CoversClass(DomainLister::class)]
 class DomainListerTest extends TestCase
 {
+    private Translator $translator;
+
     private function createLister(): DomainLister
     {
         $translator = new Translator('en');
@@ -25,7 +27,8 @@ class DomainListerTest extends TestCase
         $translator->addResource('array', ['a' => 'A'], 'en', 'validators+intl-icu');
         $translator->addResource('array', ['a' => 'A'], 'fr', 'legacy');
 
-        return new DomainLister($translator);
+        $this->translator = $translator;
+        return new DomainLister();
     }
 
     public function testListsDomainsInFullIncludingFallbackLocales(): void
@@ -33,7 +36,7 @@ class DomainListerTest extends TestCase
         // "validators" is plain in "de", but ICU in the fallback locale "en"
         $this->assertSame(
             ['frontend+intl-icu', 'internal+intl-icu', 'validators+intl-icu'],
-            $this->createLister()->list('de'),
+            $this->createLister()->list($this->translator, 'de'),
         );
     }
 
@@ -41,7 +44,7 @@ class DomainListerTest extends TestCase
     {
         $this->assertSame(
             ['internal+intl-icu', 'validators+intl-icu'],
-            $this->createLister()->list('it'),
+            $this->createLister()->list($this->translator, 'it'),
         );
     }
 }

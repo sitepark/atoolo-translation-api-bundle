@@ -185,6 +185,23 @@ class TranslationApiTest extends WebTestCase
         $this->assertSame(['farewell' => 'Au revoir'], $data['legacy']);
     }
 
+    public function testDeliversMessagesOfSource(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/de/domains/frontend?source=overrides');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('{"greeting":"Moin!"}', $client->getResponse()->getContent());
+    }
+
+    public function testUnknownSource(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/translations/de/domains/frontend?source=unknown');
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
     public function testCorsPreflight(): void
     {
         $client = static::createClient();

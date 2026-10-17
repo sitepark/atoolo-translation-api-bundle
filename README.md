@@ -99,6 +99,30 @@ locale. The messages of each domain are the same as when fetched
 individually. The same restrictions apply, and the response is private as
 well.
 
+### Sources
+
+All endpoints take the optional query parameter `source`:
+
+```
+GET /api/translations/de/domains/frontend?source=overrides
+```
+
+Without it, the messages come from the translator of the application. An
+application can register further sources, e.g. the messages of one kind of
+translation resources only, or a translator without them. A source is a
+`Symfony\Component\Translation\TranslatorBagInterface` service tagged with
+`atoolo_translation_api.source`, its name is the attribute `source`:
+
+```yaml
+# config/services.yaml
+App\Translation\OverridesSource:
+  tags:
+    - { name: atoolo_translation_api.source, source: overrides }
+```
+
+The bundle knows nothing about what a source holds. An unknown source
+responds with `404`; the same restrictions apply as without source.
+
 ## Installation
 
 ```php

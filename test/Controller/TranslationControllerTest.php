@@ -11,12 +11,14 @@ use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
 use Atoolo\TranslationApi\Service\LocaleResolver;
+use Atoolo\TranslationApi\Service\TranslationSources;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\Translator;
 
 #[CoversClass(TranslationController::class)]
@@ -44,16 +46,31 @@ class TranslationControllerTest extends TestCase
             'greeting' => 'Bonjour',
         ], 'fr', 'frontend+intl-icu');
 
+        $overrides = new Translator('en');
+        $overrides->addLoader('array', new ArrayLoader());
+        $overrides->addResource('array', [
+            'greeting' => 'Moin',
+        ], 'de', 'frontend+intl-icu');
+
         $authorizationChecker = $this->createStub(AuthorizationCheckerInterface::class);
         $authorizationChecker->method('isGranted')->willReturn($fullAccess);
 
         return new TranslationController(
-            new CatalogueExporter($translator),
+            new CatalogueExporter(),
             new LocaleResolver(['de', 'en']),
             new KeyNester(),
             new FullAccessChecker($authorizationChecker, ['ROLE_TRANSLATOR']),
             new JsonResponseFactory(600),
             new ExposedDomains($domains),
+            self::sources($translator, $overrides),
+        );
+    }
+
+    private static function sources(Translator $translator, Translator $overrides): TranslationSources
+    {
+        return new TranslationSources(
+            $translator,
+            new ServiceLocator(['overrides' => static fn(): Translator => $overrides]),
         );
     }
 
@@ -121,6 +138,21 @@ class TranslationControllerTest extends TestCase
 
         $this->assertSame('{"secret":"Secret"}', $response->getContent());
         $this->assertTrue($response->headers->hasCacheControlDirective('public'));
+    }
+
+    public function testDeliversMessagesOfSource(): void
+    {
+        $request = new Request(['source' => 'overrides']);
+        $response = ($this->createController())($request, 'de', 'frontend');
+
+        $this->assertSame('{"greeting":"Moin"}', $response->getContent());
+        $this->assertTrue($response->headers->hasCacheControlDirective('public'));
+    }
+
+    public function testRejectsUnknownSource(): void
+    {
+        $this->expectException(NotFoundHttpException::class);
+        ($this->createController())(new Request(['source' => 'unknown']), 'de', 'frontend');
     }
 
     public function testRejectsDomainNotExposed(): void

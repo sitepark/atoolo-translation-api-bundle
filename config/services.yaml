@@ -3,9 +3,12 @@ services:
     autowire: true
     autoconfigure: true
 
-  Atoolo\TranslationApi\Service\CatalogueExporter:
+  Atoolo\TranslationApi\Service\CatalogueExporter: ~
+
+  Atoolo\TranslationApi\Service\TranslationSources:
     arguments:
       $translator: '@translator'
+      $sources: !tagged_locator { tag: atoolo_translation_api.source, index_by: source }
 
   Atoolo\TranslationApi\Service\LocaleResolver:
     arguments:
@@ -22,9 +25,7 @@ services:
     arguments:
       $cacheMaxAge: '%atoolo_translation_api.cache_max_age%'
 
-  Atoolo\TranslationApi\Service\DomainLister:
-    arguments:
-      $translator: '@translator'
+  Atoolo\TranslationApi\Service\DomainLister: ~
 
   Atoolo\TranslationApi\Service\ExposedDomains:
     arguments:

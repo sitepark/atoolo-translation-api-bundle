@@ -12,10 +12,6 @@ use Symfony\Component\Translation\TranslatorBagInterface;
  */
 class DomainLister
 {
-    public function __construct(
-        private readonly TranslatorBagInterface $translator,
-    ) {}
-
     /**
      * Domains are named in full, i.e. with the `+intl-icu` suffix if the
      * domain contains ICU messages in the locale or one of its fallback
@@ -23,10 +19,10 @@ class DomainLister
      *
      * @return list<string> sorted domains
      */
-    public function list(string $locale): array
+    public function list(TranslatorBagInterface $translator, string $locale): array
     {
         $domains = [];
-        $catalogue = $this->translator->getCatalogue($locale);
+        $catalogue = $translator->getCatalogue($locale);
         while ($catalogue !== null) {
             // getDomains() strips the ICU suffix
             foreach ($catalogue->getDomains() as $domain) {

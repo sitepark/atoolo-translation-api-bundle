@@ -12,10 +12,6 @@ use Symfony\Component\Translation\TranslatorBagInterface;
  */
 class CatalogueExporter
 {
-    public function __construct(
-        private readonly TranslatorBagInterface $translator,
-    ) {}
-
     /**
      * Messages of the more specific locale win over those of its fallback
      * locales. Both the ICU (`domain+intl-icu`) and the plain domain are
@@ -23,10 +19,10 @@ class CatalogueExporter
      *
      * @return array<string, string> flat map of translation key to message
      */
-    public function export(string $locale, string $domain): array
+    public function export(TranslatorBagInterface $translator, string $locale, string $domain): array
     {
         $messages = [];
-        $catalogue = $this->translator->getCatalogue($locale);
+        $catalogue = $translator->getCatalogue($locale);
         while ($catalogue !== null) {
             $messages += $catalogue->all($domain);
             $catalogue = $catalogue->getFallbackCatalogue();

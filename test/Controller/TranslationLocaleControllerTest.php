@@ -12,12 +12,14 @@ use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
 use Atoolo\TranslationApi\Service\LocaleResolver;
+use Atoolo\TranslationApi\Service\TranslationSources;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\Translator;
 
 #[CoversClass(TranslationLocaleController::class)]
@@ -37,17 +39,30 @@ class TranslationLocaleControllerTest extends TestCase
         $translator->addResource('array', ['a' => 'A'], 'de', 'internal');
         $translator->addResource('array', ['a' => 'A'], 'fr', 'legacy');
 
+        $overrides = new Translator('en');
+        $overrides->addLoader('array', new ArrayLoader());
+        $overrides->addResource('array', ['a.b' => 'Override'], 'de', 'frontend+intl-icu');
+
         $authorizationChecker = $this->createStub(AuthorizationCheckerInterface::class);
         $authorizationChecker->method('isGranted')->willReturn($fullAccess);
 
         return new TranslationLocaleController(
-            new DomainLister($translator),
+            new DomainLister(),
             new LocaleResolver(['de']),
             new FullAccessChecker($authorizationChecker, ['ROLE_TRANSLATOR']),
             new JsonResponseFactory(600),
             new ExposedDomains($domains),
-            new CatalogueExporter($translator),
+            new CatalogueExporter(),
             new KeyNester(),
+            self::sources($translator, $overrides),
+        );
+    }
+
+    private static function sources(Translator $translator, Translator $overrides): TranslationSources
+    {
+        return new TranslationSources(
+            $translator,
+            new ServiceLocator(['overrides' => static fn(): Translator => $overrides]),
         );
     }
 
@@ -125,5 +140,25 @@ class TranslationLocaleControllerTest extends TestCase
     {
         $this->expectException(NotFoundHttpException::class);
         $this->createController()->messages(new Request(), 'fr');
+    }
+
+    public function testListsDomainsOfSource(): void
+    {
+        $response = $this->createController(true)->domains(new Request(['source' => 'overrides']), 'de');
+
+        $this->assertSame('["frontend+intl-icu"]', $response->getContent());
+    }
+
+    public function testDeliversMessagesOfSource(): void
+    {
+        $response = $this->createController()->messages(new Request(['source' => 'overrides']), 'de');
+
+        $this->assertSame('{"frontend+intl-icu":{"a":{"b":"Override"}}}', $response->getContent());
+    }
+
+    public function testRejectsUnknownSource(): void
+    {
+        $this->expectException(NotFoundHttpException::class);
+        $this->createController()->domains(new Request(['source' => 'unknown']), 'de');
     }
 }

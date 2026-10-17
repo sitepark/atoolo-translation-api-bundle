@@ -15,6 +15,8 @@ class CatalogueExporterTest extends TestCase
 {
     private CatalogueExporter $exporter;
 
+    private Translator $translator;
+
     protected function setUp(): void
     {
         $translator = new Translator('en');
@@ -36,7 +38,8 @@ class CatalogueExporterTest extends TestCase
             'secret' => 'Secret',
         ], 'de', 'internal');
 
-        $this->exporter = new CatalogueExporter($translator);
+        $this->translator = $translator;
+        $this->exporter = new CatalogueExporter();
     }
 
     public function testExportMergesIcuAndPlainMessages(): void
@@ -48,13 +51,13 @@ class CatalogueExporterTest extends TestCase
                 'only_en' => 'English only',
                 'legacy' => 'Legacy %name%',
             ],
-            $this->exporter->export('en', 'frontend'),
+            $this->exporter->export($this->translator, 'en', 'frontend'),
         );
     }
 
     public function testExportPrefersLocaleOverFallback(): void
     {
-        $messages = $this->exporter->export('de', 'frontend');
+        $messages = $this->exporter->export($this->translator, 'de', 'frontend');
 
         $this->assertSame('Hallo', $messages['greeting']);
         $this->assertSame(
@@ -68,12 +71,12 @@ class CatalogueExporterTest extends TestCase
     {
         $this->assertArrayNotHasKey(
             'secret',
-            $this->exporter->export('de', 'frontend'),
+            $this->exporter->export($this->translator, 'de', 'frontend'),
         );
     }
 
     public function testExportOfUnknownDomainIsEmpty(): void
     {
-        $this->assertSame([], $this->exporter->export('de', 'unknown'));
+        $this->assertSame([], $this->exporter->export($this->translator, 'de', 'unknown'));
     }
 }

@@ -11,6 +11,7 @@ use Atoolo\TranslationApi\Service\FullAccessChecker;
 use Atoolo\TranslationApi\Service\JsonResponseFactory;
 use Atoolo\TranslationApi\Service\KeyNester;
 use Atoolo\TranslationApi\Service\LocaleResolver;
+use Atoolo\TranslationApi\Service\TranslationSources;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -23,6 +24,9 @@ use Symfony\Component\Routing\Attribute\Route;
  * The messages are delivered unchanged, i.e. in ICU message format if the
  * domain uses it. The domain may be requested with or without `+intl-icu`
  * suffix, both deliver the ICU and the plain messages of the domain.
+ *
+ * The optional query parameter `source` names another source of the
+ * messages, see {@see TranslationSources}.
  *
  * Users with full access (see {@see FullAccessChecker}) may additionally
  * fetch every domain and well-formed locale. These responses must not be
@@ -37,12 +41,13 @@ final class TranslationController
         private readonly FullAccessChecker $fullAccessChecker,
         private readonly JsonResponseFactory $responseFactory,
         private readonly ExposedDomains $exposedDomains,
+        private readonly TranslationSources $sources,
     ) {}
 
     /**
-     * @throws NotFoundHttpException if the locale is malformed or the
-     *     domain is not exposed or the locale is not allowed and the user
-     *     has no full access
+     * @throws NotFoundHttpException if the source is unknown, the locale is
+     *     malformed or the domain is not exposed or the locale is not allowed
+     *     and the user has no full access
      */
     #[Route(
         path: '/api/translations/{locale}/domains/{domain}.{_format}',
@@ -53,6 +58,7 @@ final class TranslationController
     )]
     public function __invoke(Request $request, string $locale, string $domain): Response
     {
+        $source = $this->sources->fromRequest($request);
         $domain = DomainName::base($domain);
         $resolvedLocale = $this->localeResolver->resolve($locale);
         $exposedDomain = $this->exposedDomains->isExposed($domain);
@@ -71,7 +77,7 @@ final class TranslationController
         }
 
         $messages = $this->keyNester->nest(
-            $this->exporter->export($resolvedLocale, $domain),
+            $this->exporter->export($source, $resolvedLocale, $domain),
         );
 
         return $this->responseFactory->create(

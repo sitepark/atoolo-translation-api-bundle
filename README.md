@@ -4,8 +4,8 @@ Symfony bundle that delivers the messages of the Symfony translator as JSON
 over HTTP — one request per locale and translation domain. The first use
 case is [i18next](https://www.i18next.com/) with
 [`i18next-http-backend`](https://github.com/i18next/i18next-http-backend):
-labels are maintained in Symfony translation files (e.g. Infosite language
-packages in SiteKit) instead of being hard-coded in the frontend.
+labels are maintained in Symfony translation files instead of being
+hard-coded in the frontend.
 
 This bundle only **delivers** existing translations. It does not create
 them — for machine translation of translation files see `translate-api`.
@@ -147,17 +147,16 @@ atoolo_translation_api:
 
 The bundle uses the `translator` service and thus sees everything the
 translator knows: `translations/` of the application, bundle translations
-and translations added at runtime (in SiteKit: the Infosite language packages
-from `var/infosite_translations`, see `SP\SiteKit\Translation\InfositeTranslationSupplier`).
+and translations added to the translator at runtime.
 
 **Never expose domains that contain internal texts** — every message of an
 exposed domain is publicly readable.
 
 `domains: ['*']` exposes every domain the translator knows — including
-those of other bundles (e.g. `validators`, `security`), runtime resources
-(e.g. the Infosite language packages) and every domain added by a future
-update. Use it only if all of them are meant to be public, e.g. because they
-only contain texts shown to visitors anyway.
+those of other bundles (e.g. `validators`, `security`), translations added
+at runtime and every domain added by a future update. Use it only if all of
+them are meant to be public, e.g. because they only contain texts shown to
+visitors anyway.
 
 ## Full access
 
@@ -197,10 +196,7 @@ Applications using `atoolo/security-bundle` need no additional firewall: the
 * Clients fetch a token via `POST /api/login_check` and send it as
   `Authorization: Bearer <token>`. Requests without token stay anonymous,
   an invalid or expired token responds with `401`.
-* Roles of IES and SiteKit users are mapped to `ROLE_<NAME>` in upper case
-  (`api` → `ROLE_API`).
-* The IES already uses the user `api` with `ROLE_API`, which also grants
-  access to `/api/admin/`. Reusing it needs no additional user:
+* Full access is granted via the roles of these users, e.g.:
 
   ```yaml
   atoolo_translation_api:

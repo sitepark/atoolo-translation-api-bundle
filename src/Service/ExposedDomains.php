@@ -10,7 +10,7 @@ namespace Atoolo\TranslationApi\Service;
  */
 class ExposedDomains
 {
-    public const string ALL = '*';
+    public const ALL = '*';
 
     /**
      * @var list<string>

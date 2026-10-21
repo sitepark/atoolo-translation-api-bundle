@@ -11,7 +11,7 @@ namespace Atoolo\TranslationApi\Service;
  */
 class LocaleResolver
 {
-    private const string LOCALE_PATTERN = '/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]{2,8})*$/';
+    private const LOCALE_PATTERN = '/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]{2,8})*$/';
 
     /**
      * @param list<string> $locales allowed locales, empty allows every

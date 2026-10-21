@@ -17,7 +17,7 @@ use Symfony\Component\Translation\TranslatorBagInterface;
  */
 final class ValidateSourcesPass implements CompilerPassInterface
 {
-    public const string TAG = 'atoolo_translation_api.source';
+    public const TAG = 'atoolo_translation_api.source';
 
     public function process(ContainerBuilder $container): void
     {
